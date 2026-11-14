@@ -1,1 +1,95 @@
-{% extends "base.html" %}{% block body %}<h1>Users & Permissions</h1><div class="card"><h2>إضافة مستخدم</h2><form method="post"><input type="hidden" name="csrf" value="{{csrf}}"><div class="grid"><div><label>Username</label><input name="username" required></div><div><label>الاسم الكامل</label><input name="full_name" required></div><div><label>كلمة مرور مؤقتة (12 حرفًا على الأقل)</label><input name="password" type="password" required></div><div><label>الدور</label><select name="role">{% for k,v in roles.items() %}<option value="{{k}}">{{v}}</option>{% endfor %}</select></div><div><label>القسم (لمهندس القسم)</label><select name="department"><option value="">—</option>{% for d in departments %}<option>{{d}}</option>{% endfor %}</select></div><div><label>Manager ID (اختياري)</label><input name="manager_id" type="number"></div><div><label>Supervisor ID (اختياري)</label><input name="supervisor_id" type="number"></div></div><button>إنشاء المستخدم</button></form></div><div class="card"><h2>المستخدمون</h2><table><tr><th>ID</th><th>Username</th><th>الاسم</th><th>الدور</th><th>القسم</th><th>الحالة</th><th></th></tr>{% for x in users %}<tr><td>{{x.id}}</td><td>{{x.username}}</td><td>{{x.full_name}}</td><td>{{roles[x.role]}}</td><td>{{x.department or '—'}}</td><td>{{'Active' if x.active else 'Disabled'}}</td><td><form method="post" action="{{url_for('toggle_user',user_id=x.id)}}"><input type="hidden" name="csrf" value="{{csrf}}"><button class="secondary">تغيير الحالة</button></form></td></tr>{% endfor %}</table></div>{% endblock %}
+{% extends "base.html" %}
+{% block body %}
+
+<h1>Users & Permissions</h1>
+
+<div class="card">
+    <h2>إضافة مستخدم</h2>
+
+    <form method="post">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+
+        <div class="grid">
+            <div>
+                <label>Username</label>
+                <input name="username" required>
+            </div>
+
+            <div>
+                <label>الاسم الكامل</label>
+                <input name="full_name" required>
+            </div>
+
+            <div>
+                <label>كلمة مرور مؤقتة (12 حرفًا على الأقل)</label>
+                <input name="password" type="password" required>
+            </div>
+
+            <div>
+                <label>الدور</label>
+                <select name="role">
+                    {% for k, v in roles.items() if k != 'owner' %}
+                    <option value="{{ k }}">{{ v }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>القسم</label>
+                <select name="department">
+                    <option value="">—</option>
+                    {% for d in departments %}
+                    <option>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Manager ID</label>
+                <input name="manager_id" type="number">
+            </div>
+
+            <div>
+                <label>Supervisor ID</label>
+                <input name="supervisor_id" type="number">
+            </div>
+        </div>
+
+        <button type="submit">إنشاء المستخدم</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>المستخدمون</h2>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>الاسم</th>
+            <th>الدور</th>
+            <th>القسم</th>
+            <th>الحالة</th>
+            <th>الإجراء</th>
+        </tr>
+
+        {% for x in users %}
+        <tr>
+            <td>{{ x.id }}</td>
+            <td>{{ x.username }}</td>
+            <td>{{ x.full_name }}</td>
+            <td>{{ roles[x.role] }}</td>
+            <td>{{ x.department or '—' }}</td>
+            <td>{{ 'Active' if x.active else 'Disabled' }}</td>
+            <td>
+                <form method="post" action="{{ url_for('toggle_user', user_id=x.id) }}">
+                    <input type="hidden" name="csrf" value="{{ csrf }}">
+                    <button class="secondary">تغيير الحالة</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
