@@ -42,7 +42,7 @@ def db():
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys=ON")
     return g.db
-
+    
 @app.teardown_appcontext
 def close_db(exc):
     conn = g.pop("db", None)
@@ -98,7 +98,7 @@ def init_db():
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       memo_id INTEGER NOT NULL,
       actor_id INTEGER NOT NULL,
-      action TEXT NOT NULL,
+    action TEXT NOT NULL,
       details TEXT,
       created_at TEXT NOT NULL,
       FOREIGN KEY(memo_id) REFERENCES memos(id),
@@ -413,16 +413,27 @@ def forbidden(e): return render_template("error.html", code=403, message="ليس
 @app.errorhandler(404)
 def not_found(e): return render_template("error.html", code=404, message="المذكرة أو الصفحة غير موجودة."),404
 
-if __name__ == "__main__":
+def bootstrap_application():
+    """Initialize the database and optionally create the first admin user.
+
+    This runs for both Gunicorn imports and local `python app.py` execution.
+    """
     init_db()
     if os.environ.get("ACRO_BOOTSTRAP_ADMIN") == "1":
         with app.app_context():
             if not db().execute("SELECT id FROM users WHERE role='admin' LIMIT 1").fetchone():
-                uname=os.environ.get("ACRO_ADMIN_USER","admin")
-                pwd=os.environ.get("ACRO_ADMIN_PASSWORD","")
-                if len(pwd)<12:
-                    raise SystemExit("Set ACRO_ADMIN_PASSWORD to a strong password of at least 12 characters.")
-                db().execute("INSERT INTO users(username,full_name,password_hash,role) VALUES(?,?,?,'admin')",
-                             (uname,"System Administrator",generate_password_hash(pwd)))
+                uname = os.environ.get("ACRO_ADMIN_USER", "admin")
+                pwd = os.environ.get("ACRO_ADMIN_PASSWORD", "")
+                if len(pwd) < 12:
+                    raise RuntimeError("Set ACRO_ADMIN_PASSWORD to a strong password of at least 12 characters.")
+                db().execute(
+                    "INSERT INTO users(username,full_name,password_hash,role) VALUES(?,?,?,'admin')",
+                    (uname, "System Administrator", generate_password_hash(pwd)),
+                )
                 db().commit()
-    app.run(host="127.0.0.1", port=int(os.environ.get("PORT","5000")), debug=False)
+
+
+bootstrap_application()
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=False)
