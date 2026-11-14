@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block body %}<h1>Dashboard</h1><p class="muted">مرحبًا {{user.full_name}} — {{roles[user.role]}}</p><div class="grid"><div class="metric">إجمالي المذكرات<b>{{total}}</b></div>{% for s in statuses %}<div class="metric">{{s}}<b>{{counts[s]}}</b></div>{% endfor %}</div><div class="card"><h2>أحدث المذكرات</h2>{% include "_table.html" %}</div>{% endblock %}

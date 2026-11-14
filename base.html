@@ -1,0 +1,22 @@
+
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACRO E-QUALITY</title><link rel="manifest" href="/static/manifest.webmanifest"><meta name="theme-color" content="#10253f"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ACRO Quality"><link rel="apple-touch-icon" href="/static/icon.svg"><style>
+:root{--navy:#10253f;--blue:#1769aa;--bg:#f3f6fa;--line:#dce4ed}*{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:var(--bg);color:#182433}
+header{background:var(--navy);color:white;padding:16px 5%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header strong{font-size:21px;letter-spacing:.5px}nav{display:flex;gap:12px;flex-wrap:wrap}a{color:var(--blue);text-decoration:none}nav a{color:white}
+main{max-width:1100px;margin:26px auto;padding:0 16px}.card{background:white;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 3px 12px #132a4410}
+h1,h2{margin-top:0;color:var(--navy)}label{display:block;margin:12px 0 5px;font-weight:bold}input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:7px;font:inherit}textarea{min-height:110px}
+button,.btn{border:0;border-radius:7px;background:var(--blue);color:white;padding:10px 16px;cursor:pointer;font:inherit;display:inline-block}.secondary{background:#536579}.danger{background:#a33}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.metric{background:#f7faff;border:1px solid var(--line);padding:14px;border-radius:10px}.metric b{font-size:24px;display:block;color:var(--blue)}
+table{width:100%;border-collapse:collapse;background:white}th,td{padding:11px;border-bottom:1px solid var(--line);text-align:right}th{background:#edf3f9}
+.badge{background:#e6f0fb;color:#164c7d;border-radius:20px;padding:5px 9px;font-size:13px;display:inline-block}.flash{background:#e8f7ed;padding:10px;border-radius:8px;margin-bottom:12px}
+small,.muted{color:#667789}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+</style></head><body><header><strong>ACRO E-QUALITY</strong><nav>
+{% if user %}<a href="{{url_for('dashboard')}}">Dashboard</a><a href="{{url_for('memo_list')}}">المذكرات</a>
+{% if user.role in ['inspector','manager','admin'] %}<a href="{{url_for('new_memo')}}">New Memo</a>{% endif %}
+{% if user.role in ['manager','admin'] %}<a href="{{url_for('reports')}}">Reports</a>{% endif %}
+{% if user.role=='admin' %}<a href="{{url_for('users_admin')}}">Users</a>{% endif %}
+<form method="post" action="{{url_for('logout')}}" style="display:inline"><input type="hidden" name="csrf" value="{{csrf}}"><button class="secondary">خروج</button></form>{% endif %}
+</nav></header><main>{% for msg in get_flashed_messages() %}<div class="flash">{{msg}}</div>{% endfor %}{% block body %}{% endblock %}</main><script>
+if ('serviceWorker' in navigator) { window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{})); }
+</script></body></html>
