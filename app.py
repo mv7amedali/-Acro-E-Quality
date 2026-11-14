@@ -1,4 +1,3 @@
-
 import os, sqlite3, secrets
 from datetime import datetime, timedelta
 from functools import wraps
@@ -19,6 +18,7 @@ app.config.update(
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 ROLES = {
+    "owner": "System Owner",
     "admin": "System Admin",
     "manager": "Quality Manager",
     "engineer": "Quality Engineer",
@@ -42,7 +42,7 @@ def db():
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys=ON")
     return g.db
-    
+
 @app.teardown_appcontext
 def close_db(exc):
     conn = g.pop("db", None)
@@ -98,7 +98,7 @@ def init_db():
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       memo_id INTEGER NOT NULL,
       actor_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
+      action TEXT NOT NULL,
       details TEXT,
       created_at TEXT NOT NULL,
       FOREIGN KEY(memo_id) REFERENCES memos(id),
@@ -149,6 +149,8 @@ def require_roles(*roles):
         @wraps(fn)
         @require_login
         def wrapper(*args, **kwargs):
+            if g.user["role"] == "owner" and "admin" in roles:
+                return fn(*args, **kwargs)
             if g.user["role"] not in roles:
                 abort(403)
             return fn(*args, **kwargs)
@@ -170,7 +172,7 @@ def visible_memos():
     u = g.user
     sql = """SELECT m.*, c.full_name AS creator_name
              FROM memos m JOIN users c ON c.id=m.created_by"""
-    if u["role"] == "manager" or u["role"] == "admin":
+    if u["role"] in ("manager", "admin", "owner"):
         return db().execute(sql + " ORDER BY m.id DESC").fetchall()
     if u["role"] == "inspector":
         return db().execute(sql + " WHERE m.created_by=? ORDER BY m.id DESC", (u["id"],)).fetchall()
@@ -376,7 +378,7 @@ def users_admin():
         dept=request.form.get("department") or None
         manager_id=request.form.get("manager_id") or None
         supervisor_id=request.form.get("supervisor_id") or None
-        if not username or not full_name or len(password)<12 or role not in ROLES:
+        if not username or not full_name or len(password)<12 or role not in ROLES or role == "owner":
             flash("راجع البيانات: كلمة المرور يجب أن تكون 12 حرفًا على الأقل.")
             return redirect(url_for("users_admin"))
         if role=="department" and dept not in DEPARTMENTS: abort(400)
@@ -414,24 +416,20 @@ def forbidden(e): return render_template("error.html", code=403, message="ليس
 def not_found(e): return render_template("error.html", code=404, message="المذكرة أو الصفحة غير موجودة."),404
 
 def bootstrap_application():
-    """Initialize the database and optionally create the first admin user.
-
-    This runs for both Gunicorn imports and local `python app.py` execution.
-    """
+    """Initialize the database and optionally create the first admin user."""
     init_db()
     if os.environ.get("ACRO_BOOTSTRAP_ADMIN") == "1":
         with app.app_context():
-            if not db().execute("SELECT id FROM users WHERE role='admin' LIMIT 1").fetchone():
-                uname = os.environ.get("ACRO_ADMIN_USER", "admin")
+            if not db().execute("SELECT id FROM users WHERE role='owner' LIMIT 1").fetchone():
+                uname = os.environ.get("ACRO_ADMIN_USER", "owner")
                 pwd = os.environ.get("ACRO_ADMIN_PASSWORD", "")
                 if len(pwd) < 12:
                     raise RuntimeError("Set ACRO_ADMIN_PASSWORD to a strong password of at least 12 characters.")
                 db().execute(
-                    "INSERT INTO users(username,full_name,password_hash,role) VALUES(?,?,?,'admin')",
-                    (uname, "System Administrator", generate_password_hash(pwd)),
+                    "INSERT INTO users(username,full_name,password_hash,role) VALUES(?,?,?,'owner')",
+                    (uname, "System Owner", generate_password_hash(pwd)),
                 )
                 db().commit()
-
 
 bootstrap_application()
 
